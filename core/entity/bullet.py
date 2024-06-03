@@ -1,7 +1,7 @@
-import entity
+from core.entity.entity import entity as entity
 import math
 import pygame.image
-from globals import bullets
+from core.globals import bullets
 
 class bullet(entity):
   def __init__(this, team, x, y, angle, damage, speed, radius = 1):

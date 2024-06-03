@@ -1,6 +1,6 @@
 import random
-from globals import entities
-from globals import screen
+from core.globals import entities
+from core.globals import screen
 
 spawns = []
 
@@ -12,7 +12,7 @@ class timer:
     this.minDelay = minDelay
     this.maxDelay = maxDelay
     this.fn = fn
-
+    
     this.time = 0
     this.delay = random.range(minDelay, maxDelay)
   
@@ -44,10 +44,11 @@ class spawnClock(timer):
       y = -ret.radius
     elif ret.collisionType == "aabb":
       y = -ret.h
+      x = random.range(0, screen.w - ret.w)
     entities.append(ret)
     ret.update(subdt)
 
-def addBasic(entityType):
-  pass
+def addBasic(entityType, minDelay, maxDelay):
+  ret = spawnClock(entityType, minDelay, maxDelay)
 
 

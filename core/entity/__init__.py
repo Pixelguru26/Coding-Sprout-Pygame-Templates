@@ -1,7 +1,7 @@
-from entity import *
-from bullet import *
-from enemy import *
-import player as player
-import spawner as spawner
+from core.entity.entity import *
+from core.entity.bullet import *
+from core.entity.enemy import *
+import core.entity.player as player
+import core.entity.spawner as spawner
 
 

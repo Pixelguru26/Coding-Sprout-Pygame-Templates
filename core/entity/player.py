@@ -1,5 +1,5 @@
 import math
-import entity
+import core.entity.entity as entity
 import pygame
 from core.globals import screen
 
@@ -14,11 +14,12 @@ class player_class(entity):
 
   def __init__(this):
     # Player is created at the bottom center of the screen facing upwards by default.
-    entity.__init__(this, "player", screen.w/2, screen.h - 128, -90, 128/512)
+    entity.__init__(this, "player", screen.w/2, screen.h - 128, 90, 128/512)
     this.health = 100
     this.radius = 64
+    this.speed = 400
     this.setVariant()
-  
+
   def setVariant(this, var = "base"):
     # Optionally set variant of this player
     this.variant = var
@@ -29,7 +30,7 @@ class player_class(entity):
     
     # General loading
     this.sprite = pygame.image.load(f"assets\image\player\player_{this.variant}.png")
-    this.update_graphics()
+    this.update_graphics(True)
 
   # Called after game is loaded and player entity is created.
   def load(this, var = "base"):

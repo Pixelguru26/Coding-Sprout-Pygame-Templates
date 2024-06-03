@@ -2,6 +2,7 @@ import math
 import pygame.image
 import pygame.transform
 import core.graphics as graphics
+import core.globals
 
 class entity:
   collisionTypes = {
@@ -36,8 +37,6 @@ class entity:
       this.cos = math.cos(angle)
       this.sin = math.sin(angle)
       this.update_graphics(True)
-    else:
-      this.update_graphics()
 
   
   # Update cached sprite when rotated or scaled.
@@ -150,3 +149,5 @@ class entity:
   # Equivalent to this.turnRight(-amount)
   def turnLeft(this, amount = 90):
     this.rotate(-amount)
+
+core.globals.screen = entity("screen", "none", 0, 0, 0, 1, "aabb")

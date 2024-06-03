@@ -2,12 +2,8 @@ import pygame
 import math
 import core.entity as entity
 import core.graphics as graphics
-from globals import *
-
-player = entity.player_class()
-screen = entity.entity("screen", 0, 0, 0, 1, "aabb")
-screen.w = 99999
-screen.h = 99999
+import core.globals
+from core.globals import *
 
 def addEnemy(var, x, y, radius = 32):
   if var == "base":
@@ -18,6 +14,9 @@ def load():
   surf = pygame.display.get_surface()
   screen.w = surf.get_width()
   screen.h = surf.get_height()
+  global player
+  player = entity.player.player_class()
+  core.globals.player = player
 
   # Player may have custom load operations
   player.load()
@@ -34,6 +33,7 @@ def update(dt):
   screen.h = pygame.display.get_surface().get_height()
 
   # Player is separate from entities
+  global player
   player.update(dt)
   if keyIsDown("up"):
     player.forward(player.speed * dt)

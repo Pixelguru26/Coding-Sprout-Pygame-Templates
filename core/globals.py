@@ -2,7 +2,8 @@
 
 entities = []
 bullets = []
-player = None
+
 screen = None
+player = None
 
 images = {}
