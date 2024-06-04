@@ -36,7 +36,7 @@ class player_class(entity):
     
     # General loading
     this.sprite = images[f"player_{this.variant}"]
-    this.update_graphics(True
+    this.update_graphics(True)
 
   # Called after game is loaded and player entity is created.
   def load(this, var = "base"):
@@ -60,7 +60,8 @@ class player_class(entity):
 
 # Load appropriate images for player variants
 # Todo: find some way to move this to the load event
-for key, val in player_class.variants:
+for key in player_class.variants:
+  val = player_class.variants[key]
   images[f"player_{key}"] = pygame.image.load(f"assets\image\player\player_{val}.png")
 
 player = player_class()
