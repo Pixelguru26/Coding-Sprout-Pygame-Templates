@@ -1,12 +1,13 @@
 import random
-from core.globals import entities
-from core.globals import screen
+from core.globals import entities, screen
 
+# An instance of timer is called a "spawn"
+# spawns contains all currently active instances and registers them to receive update ticks.
 spawns = []
 
 # An advanced repeating trigger class.
 # Executes the provided function at regular (or irregular) intervals with sub-frame compensation.
-# The function should receive a single argument, dtsub, which represents the time since the beginning of the trigger frame, in seconds.
+# The function should receive a single argument, subdt, which represents the time since the beginning of the trigger frame, in seconds.
 class timer:
   def __init__(this, minDelay, maxDelay, fn):
     this.minDelay = minDelay
@@ -14,7 +15,7 @@ class timer:
     this.fn = fn
     
     this.time = 0
-    this.delay = random.range(minDelay, maxDelay)
+    this.delay = random.random() * (maxDelay - minDelay) + minDelay
   
   def update(this, dt):
     start = this.time
@@ -24,8 +25,8 @@ class timer:
       this.time -= this.delay
       # dt sub is the time since the start of the trigger frame in seconds.
       # This can be used to compensate for cases where multiple events happen in a single frame.
-      dtsub = this.delay - start
-      this.fn(dtsub)
+      subdt = this.delay - start
+      this.fn(subdt)
 
 # A minor extension to the timer specialized for common spawn cases
 class spawnClock(timer):
@@ -35,20 +36,33 @@ class spawnClock(timer):
     timer.__init__(this, minDelay, maxDelay, spawnFn)
     this.entityType = entityType
   
+  # Default spawn function that works well enough for most enemies
   def spawnFn(this, subdt):
-    ret = this.entityType()
+    ret = this.entityType(0, 0, 90)
     x = 0
     y = 0
     if ret.collisionType == "circle":
-      x = random.range(ret.radius, screen.w + ret.radius)
+      x = random.uniform(ret.radius, screen.w - ret.radius * 2)
       y = -ret.radius
     elif ret.collisionType == "aabb":
       y = -ret.h
-      x = random.range(0, screen.w - ret.w)
+      x = random.uniform(0, screen.w - ret.w)
+    # Line collisions don't have a sensible default other than (0, 0)
+    ret.x = x
+    ret.y = y
     entities.append(ret)
+    # Perform a PARTIAL update tick as the entities are created, allowing them to appear correctly on long frames
+    # Prevents entities from clustering together in a wave any time the game lags
     ret.update(subdt)
 
+# Propagate update to individual spawn types
+# Allows the controller to include multiple spawns at different intervals
+def update(dt):
+  for spawn in spawns:
+    spawn.update(dt)
+
+# Utility function which constructs and registers a varied spawn
 def addBasic(entityType, minDelay, maxDelay):
   ret = spawnClock(entityType, minDelay, maxDelay)
-
-
+  spawns.append(ret)
+  return ret

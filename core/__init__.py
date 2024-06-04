@@ -1,22 +1,48 @@
 import pygame
-import math
-import core.entity as entity
-import core.graphics as graphics
-import core.globals
 from core.globals import *
 
-def addEnemy(var, x, y, radius = 32):
-  if var == "base":
-    entities.append(entity.enemy("base", x, y, 90, radius))
+# ==========================================
+# Module setup
+# ==========================================
+
+# Entity module is repackaged into the entity class to avoid redundant naming conventions.
+from core.module_entity.entity import entity as entity
+
+screen = entity("none", 0, 0, 0, 1, "aabb")
+screen.w = 0
+screen.h = 0
+globals.screen = screen
+cullbox = entity("none", 0, 0, 0, 1, "aabb")
+cullbox.w = 0
+cullbox.h = 0
+globals.cullbox = cullbox
+
+from core.module_entity.bullet import bullet as __bullet
+entity.bullet = __bullet
+from core.module_entity.enemy import enemy as __enemy
+entity.enemy = __enemy
+from core.module_entity.player import player_class as __player_class
+entity.player = __player_class
+import core.module_entity.spawner as spawner
+
+# Player object should be directly accessible from game for simplicity of early tasks.
+from core.module_entity.player import player as player
+
+# ==========================================
 
 def load():
   # Load the game here
   surf = pygame.display.get_surface()
+
+  # Ensure screen object is up to date
   screen.w = surf.get_width()
   screen.h = surf.get_height()
-  global player
-  player = entity.player.player_class()
-  core.globals.player = player
+  # Ensure cullbox around the screen is up to date
+  cullbox.w = screen.w * 1.5
+  cullbox.h = screen.h * 1.5
+  # Ensure cullbox is centered on the screen
+  cullbox.x = screen.x + screen.w/2 - cullbox.w/2
+  cullbox.y = screen.y + screen.h/2 - cullbox.h/2
 
   # Player may have custom load operations
   player.load()
@@ -24,6 +50,8 @@ def load():
   # Load sprites
   images["bullet_base"] = pygame.image.load("assets\image\projectile\\bullet_base.png")
   images["enemy_base"] = pygame.image.load("assets\image\enemy\enemy_base.png")
+
+  spawner.addBasic(entity.enemy, 1, 2)
 
 def update(dt):
   # Update game state
@@ -33,8 +61,12 @@ def update(dt):
   screen.h = pygame.display.get_surface().get_height()
 
   # Player is separate from entities
-  global player
   player.update(dt)
+
+  # Spawn controller requires update ticks to function properly
+  spawner.update(dt)
+
+  # Control code is separate so it may serve as an example
   if keyIsDown("up"):
     player.forward(player.speed * dt)
   if keyIsDown("down"):
@@ -44,18 +76,18 @@ def update(dt):
   if keyIsDown("right"):
     player.right(player.speed * dt)
   # Clamp player specifically to screen bounds
-  player.x = clamp(player.x, 0, screen.w)
-  player.y = clamp(player.y, 0, screen.h)
+  player.x = clamp(player.x, screen.x, screen.x + screen.w)
+  player.y = clamp(player.y, screen.y, screen.y + screen.h)
 
   # Update enemies and projectiles
   for bullet in bullets:
     bullet.update(dt)
     # Cull offscreen
-    bullet.alive = bullet.alive and bullet.intersects(screen)
+    bullet.alive = bullet.alive and bullet.intersects(cullbox)
   for entity in entities:
     entity.update(dt)
     # Cull offscreen
-    entity.alive = bullet.alive and entity.intersects(screen)
+    entity.alive = entity.alive and entity.intersects(cullbox)
     if entity.alive and entity.intersects(player):
       player.damage(entity.health)
       entity.health = 0
@@ -64,9 +96,12 @@ def update(dt):
   for bullet in bullets:
     for entity in entities:
       if bullet.intersects(entity):
-        bullet.impact(entity)
+        bullet.touch(entity)
+    # if bullet.alive and bullet.intersects(player):
+    #   bullet.touch(player)
 
   # Remove dead entities
+  # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
   vEntity = None
   for i in range(len(entities) - 1, -1, -1):
     vEntity = entities[i]
@@ -76,6 +111,7 @@ def update(dt):
       entities.pop(i)
   
   # Remove dead bullets
+  # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
   vBullet = None
   for i in range(len(bullets) - 1, -1, -1):
     vBullet = bullets[i]
@@ -90,6 +126,45 @@ def draw():
   for entity in entities:
     entity.draw()
   player.draw()
+
+def keydown(key, mod, unicode, scancode):
+  # Handle key presses
+
+  # Simple main fire operation
+  if key == pygame.K_SPACE:
+    player.fire()
+
+def keyup(key, mod, unicode, scancode):
+  # Handle key releases
+  pass
+
+def mousedown(button, x, y):
+  # Handle mouse button presses
+  pass
+
+def mouseup(button, x, y):
+  # Handle mouse button releases
+  pass
+
+# ==========================================
+# Miscellaneous helpers for kids
+# ==========================================
+
+# Simple clamp function.
+# Returns v restricted to the range [a, b] (inclusive)
+def clamp(v, a, b):
+  if v < a: return a
+  if v > b: return b
+  return v
+
+# Shortcut to both construct and insert a new enemy into the game.
+# Returns a reference to the enemy afterwards.
+def addEnemy(var, x, y, radius = 32):
+  ret = None
+  if var == "base":
+    ret = entity.enemy("base", x, y, 90, radius)
+    entities.append(ret)
+  return ret
 
 # Input helper
 keys = {
@@ -232,38 +307,3 @@ def keyIsDown(key):
       return False
     return state[keys[key]]
   return state[key]
-
-def keydown(key, mod, unicode, scancode):
-  # Handle key presses
-
-  # Simple main fire operation
-  if key == pygame.K_SPACE:
-    player.fire()
-
-def keyup(key, mod, unicode, scancode):
-  # Handle key releases
-  pass
-
-def mousedown(button, x, y):
-  # Handle mouse button presses
-  pass
-
-def mouseup(button, x, y):
-  # Handle mouse button releases
-  pass
-
-# Miscellaneous helpers for kids
-
-# Simple clamp function.
-# Returns v restricted to the range [a, b] (inclusive)
-def clamp(v, a, b):
-  if v < a: return a
-  if v > b: return b
-  return v
-
-# Clamps to the current horizontal dimensions of the game window.
-def clampX(x):
-  return clamp(x, screen.x, screen.w)
-# Clamps to the current vertical dimensions of the game window.
-def clampY(y):
-  return clamp(y, screen.y, screen.h)

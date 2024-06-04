@@ -1,8 +1,8 @@
+# Must not import anything from this module. This is a root class.
 import math
 import pygame.image
 import pygame.transform
 import core.graphics as graphics
-import core.globals
 
 class entity:
   collisionTypes = {
@@ -10,45 +10,46 @@ class entity:
     "aabb": "aabb",
     "line": "line"
   }
+  # Entity type used to distinguish subclasses
+  type = "entity"
 
-  def __init__(this, team, entityType = "base", x = 0, y = 0, angle = 0, scale = 1, collisionType = "circle"):
+  def __init__(this, team, x = 0, y = 0, angle = 0, scale = 1, collisionType = "circle"):
     this.team = team
-    this.type = entityType
     this.x = x
     this.y = y
     this.angle = angle
     this.last_angle = angle
     this.scale = scale
     this.last_scale = scale
+    this.speed = 100
     this.collisionType = collisionType
     this.alive = True
     # Source surface for sprites
     this.sprite = None
     # Cache for storing current rotated and scaled sprite
     this.sprite_cache = None
-    this.update_graphics()
+    this.update_graphics(True)
   
   # This performs no ai functions, but is necessary for proper optimization and visual behavior.
   def update(this, dt):
-    if this.angle != this.last_angle:
-      # Updating cached trig values (future optimization)
-      # Included here to decouple from graphical updates.
-      angle = this.angle / 180 * math.pi
-      this.cos = math.cos(angle)
-      this.sin = math.sin(angle)
-      this.update_graphics(True)
+    this.update_graphics()
+    pass
 
   
   # Update cached sprite when rotated or scaled.
   # Only updates when necessary.
   # Provide "True" as a second argument to force an update with no checks.
   def update_graphics(this, override = False):
+    doUpdate = False
     # Always necessary
     if this.sprite == None:
+      doUpdate = True
       this.sprite = pygame.image.load(f"assets\image\error.png")
-    doUpdate = override
+    if override or this.sprite != this.last_sprite:
+      doUpdate = True
+      this.last_sprite = this.sprite
     # Automatically update cache for rotations
-    if this.angle != this.last_angle:
+    if override or this.angle != this.last_angle:
       doUpdate = True
       # Updating cached trig values (future optimization)
       angle = this.angle/180 * math.pi
@@ -56,7 +57,7 @@ class entity:
       this.sin = math.sin(angle)
       this.last_angle = this.angle
     # Automatically update cache for scaling
-    if this.scale != this.last_scale:
+    if override or this.scale != this.last_scale:
       doUpdate = True
       this.last_scale = this.scale
 
@@ -149,5 +150,3 @@ class entity:
   # Equivalent to this.turnRight(-amount)
   def turnLeft(this, amount = 90):
     this.rotate(-amount)
-
-core.globals.screen = entity("screen", "none", 0, 0, 0, 1, "aabb")
