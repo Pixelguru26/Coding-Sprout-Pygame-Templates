@@ -11,6 +11,11 @@ def check():
     __lib.surface = pygame.display.get_surface()
   return __lib.surface
 
+def blit(image, x, y):
+  surf = check()
+  if surf == None: return
+  surf.blit(image, (x, y))
+
 def blit_centered(image, x, y):
   surf = check()
   if surf == None: return

@@ -28,8 +28,18 @@ class timer:
       subdt = this.delay - start
       this.fn(subdt)
 
+  # Registers this timer to the spawns list if it is not already present.
+  def register(this):
+    if this in spawns: return
+    spawns.append(this)
+  
+  # Removes this timer from the spawns list and resets it.
+  def remove(this):
+    this.time = 0
+    spawns.remove(this)
+
 # A minor extension to the timer specialized for common spawn cases
-class spawnClock(timer):
+class spawnTimer(timer):
   def __init__(this, entityType, minDelay, maxDelay, spawnFn = None):
     if spawnFn == None:
       spawnFn = this.spawnFn
@@ -63,6 +73,6 @@ def update(dt):
 
 # Utility function which constructs and registers a varied spawn
 def addBasic(entityType, minDelay, maxDelay):
-  ret = spawnClock(entityType, minDelay, maxDelay)
+  ret = spawnTimer(entityType, minDelay, maxDelay)
   spawns.append(ret)
   return ret

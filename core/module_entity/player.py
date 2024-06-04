@@ -1,14 +1,17 @@
 from core.module_entity.entity import entity
 import pygame
-from core.globals import screen
+from core.globals import screen, images
 
 # Singleton class for the player, allowing it to inherit properly from entity.
 # Constructing new instances is ill-advised, though technically possible.
 class player_class(entity):
   # Set of all valid player variants.
-  # Key: id, Val: filename
+  # Key: id, Val: file name hint
   variants = {
-    "base": "base"
+    "base": "base",
+    "gold": "gold",
+    "red": "red",
+    "skull": "skull"
   }
   # Entity type used to distinguish subclasses
   type = "player"
@@ -19,6 +22,8 @@ class player_class(entity):
     this.health = 100
     this.radius = 64
     this.speed = 400
+    this.mainfire = "base"
+    this.altfire = "base"
     this.update_graphics()
 
   def setVariant(this, var = "base"):
@@ -30,8 +35,8 @@ class player_class(entity):
       this.variant = player_class.variants["base"]
     
     # General loading
-    this.sprite = pygame.image.load(f"assets\image\player\player_{this.variant}.png")
-    this.update_graphics()
+    this.sprite = images[f"player_{this.variant}"]
+    this.update_graphics(True
 
   # Called after game is loaded and player entity is created.
   def load(this, var = "base"):
@@ -41,11 +46,21 @@ class player_class(entity):
 
   def damage(this, amt):
     this.health -= amt # Limited effects for now
+    if this.health <= 0:
+      this.alive = False
 
   def update(this, dt):
     entity.update(this, dt)
 
-  def fire(this, variant = "base", offset = False):
-    entity.fire(this, "player", variant, offset)
+  def shoot(this, mode = "main", offset = False):
+    if mode == "main":
+      entity.shoot(this, this.mainfire, offset)
+    else:
+      entity.shoot(this, this.altfire, offset)
+
+# Load appropriate images for player variants
+# Todo: find some way to move this to the load event
+for key, val in player_class.variants:
+  images[f"player_{key}"] = pygame.image.load(f"assets\image\player\player_{val}.png")
 
 player = player_class()

@@ -28,9 +28,12 @@ import core.module_entity.spawner as spawner
 # Player object should be directly accessible from game for simplicity of early tasks.
 from core.module_entity.player import player as player
 
+# The default enemy spawner used at the beginning of the game.
+globals.base_spawn = spawner.addBasic(entity.enemy, 1, 2)
+
 # ==========================================
 
-def load():
+def __load():
   # Load the game here
   surf = pygame.display.get_surface()
 
@@ -44,16 +47,14 @@ def load():
   cullbox.x = screen.x + screen.w/2 - cullbox.w/2
   cullbox.y = screen.y + screen.h/2 - cullbox.h/2
 
-  # Player may have custom load operations
-  player.load()
-
   # Load sprites
   images["bullet_base"] = pygame.image.load("assets\image\projectile\\bullet_base.png")
   images["enemy_base"] = pygame.image.load("assets\image\enemy\enemy_base.png")
+  
+  # Player may have custom load operations
+  player.load()
 
-  spawner.addBasic(entity.enemy, 1, 2)
-
-def update(dt):
+def __update(dt):
   # Update game state
 
   # Ensure screen object is up to date
@@ -118,7 +119,7 @@ def update(dt):
     if not vBullet.alive:
       bullets.pop(i)
 
-def draw():
+def __draw():
   # Initially proposed as script code.
   # Bullets drawn before entities in order to appear "below."
   for bullet in bullets:
@@ -127,22 +128,25 @@ def draw():
     entity.draw()
   player.draw()
 
-def keydown(key, mod, unicode, scancode):
+def __keydown(key, mod, unicode, scancode):
   # Handle key presses
 
   # Simple main fire operation
   if key == pygame.K_SPACE:
-    player.fire()
+    player.shoot("main")
+  # Alt fire - by default, the same as main fire
+  if key == pygame.K_LSHIFT:
+    player.shoot("alt")
 
-def keyup(key, mod, unicode, scancode):
+def __keyup(key, mod, unicode, scancode):
   # Handle key releases
   pass
 
-def mousedown(button, x, y):
+def __mousedown(button, x, y):
   # Handle mouse button presses
   pass
 
-def mouseup(button, x, y):
+def __mouseup(button, x, y):
   # Handle mouse button releases
   pass
 
@@ -157,13 +161,35 @@ def clamp(v, a, b):
   if v > b: return b
   return v
 
+# Simple wrap function.
+# Returns v restricted to the range [a, b), wrapping when necessary
+def wrap(v, a, b):
+  return (v - a)%(b - a) + a
+
+# Simple linear interpolation on one axis.
+# Returns the number a fraction (v) of the way between a and b.
+# Does not perform clamping before operation.
+def lerp(v, a, b):
+  return v*(b-a)+a
+
 # Shortcut to both construct and insert a new enemy into the game.
 # Returns a reference to the enemy afterwards.
 def addEnemy(var, x, y, radius = 32):
   ret = None
   if var == "base":
-    ret = entity.enemy("base", x, y, 90, radius)
+    ret = entity.enemy(x, y, 90, radius)
+    ret.scale *= radius / 32
     entities.append(ret)
+  return ret
+
+# Shortcut to both construct and insert a new bullet into the game.
+# Reterns a reference to the bullet afterwards.
+def addBullet(var, x, y, angle, damage = 100, speed = 1024, scale = 1):
+  ret = None
+  if var == "base":
+    ret = entity.bullet("none", x, y, angle, damage, speed, scale)
+    ret.scale = scale
+    bullets.append(ret)
   return ret
 
 # Input helper

@@ -29,20 +29,20 @@ class bullet(entity):
   # Deals damage to the target and destroys this bullet.
   # Checks team alignment first.
   def touch(this, target):
-    if target.team == this.team or target.team == "all":
-      return
+    if target.team != "none":
+      if target.team == this.team or target.team == "all":
+        return
     this.impact(target)
-
 
 # Fires a bullet from this entity.
 # Valid teams are: "player", "enemy", "none", "all"; indicating who will be excluded from collisions.
 # Optional offset creates the bullet just ahead of the entity, potentially preventing self-annihilation.
-def __fire(this, team = "enemy", variant = "base", offset = False):
+def __shoot(this, variant = "base", offset = False):
   ret = None
 
   # Create abstract bullet entity
   if variant == "base":
-    ret = bullet(team, this.x, this.y, this.angle, 100, 1024)
+    ret = bullet(this.team, this.x, this.y, this.angle, 100, 1024)
   
   # Offset if applicable
   if offset and this.collisionType == "circle" and ret != None and ret.collisionType == "circle":
@@ -51,4 +51,4 @@ def __fire(this, team = "enemy", variant = "base", offset = False):
   # Add bullet to world
   if ret != None:
     bullets.append(ret)
-entity.fire = __fire
+entity.shoot = __shoot

@@ -13,7 +13,7 @@ class entity:
   # Entity type used to distinguish subclasses
   type = "entity"
 
-  def __init__(this, team, x = 0, y = 0, angle = 0, scale = 1, collisionType = "circle"):
+  def __init__(this, team = "none", x = 0, y = 0, angle = 0, scale = 1, collisionType = "circle", a = 0, b = 0):
     this.team = team
     this.x = x
     this.y = y
@@ -22,7 +22,16 @@ class entity:
     this.scale = scale
     this.last_scale = scale
     this.speed = 100
+    # Each collision type has its own dimension argument overload.
     this.collisionType = collisionType
+    if collisionType == "circle":
+      this.radius = a
+    elif collisionType == "aabb":
+      this.w = a
+      this.h = b
+    elif collisionType == "line":
+      this.x2 = a
+      this.y2 = b
     this.alive = True
     # Source surface for sprites
     this.sprite = None
@@ -69,7 +78,10 @@ class entity:
   
   # Renders cached graphics by default. Does not update cache.
   def draw(this):
-    graphics.blit_centered(this.sprite_cache, this.x, this.y)
+    if this.collisionType == "circle":
+      graphics.blit_centered(this.sprite_cache, this.x, this.y)
+    else:
+      graphics.blit(this.sprite_cache, this.x, this.y)
 
   # Checks if this entity intersects another using proper collision types.
   # Includes exact contact (distance = 0)
@@ -109,10 +121,6 @@ class entity:
     # This will be used for death animations.
     # Name chosen to alarm fewer parents.
     this.alive = False
-
-  def draw(this):
-    # This will be used for more advanced animations, probably.
-    graphics.blit_centered(this.sprite_cache, this.x, this.y)
   
   # Turtle capabilities
   # Moves the entity forward by the specified number of pixels.
