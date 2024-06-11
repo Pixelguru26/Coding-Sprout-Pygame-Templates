@@ -16,8 +16,10 @@ class timer:
     
     this.time = 0
     this.delay = random.random() * (maxDelay - minDelay) + minDelay
+    this.enabled = True
   
   def update(this, dt):
+    if not this.enabled: return
     start = this.time
     this.time += dt
 
@@ -35,8 +37,22 @@ class timer:
   
   # Removes this timer from the spawns list and resets it.
   def remove(this):
-    this.time = 0
+    this.reset()
     spawns.remove(this)
+  
+  # Resets this timer's progress with no side effects
+  def reset(this):
+    this.time = 0
+  
+  # Enables this timer to receive update ticks and perform actions.
+  # Does not reset delay or progress.
+  def enable(this):
+    this.enabled = True
+  
+  # Disables this timer, preventing it from updating or performing actions.
+  # Does not reset delay or progress.
+  def disable(this):
+    this.enabled = False
 
 # A minor extension to the timer specialized for common spawn cases
 class spawnTimer(timer):

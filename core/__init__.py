@@ -1,5 +1,6 @@
 import pygame
 from core.globals import *
+from core.util import *
 
 # ==========================================
 # Module setup
@@ -19,6 +20,8 @@ globals.cullbox = cullbox
 
 from core.module_entity.bullet import bullet as __bullet
 entity.bullet = __bullet
+from core.module_entity.bullet import rocket as __rocket
+entity.rocket = __rocket
 from core.module_entity.enemy import enemy as __enemy
 entity.enemy = __enemy
 from core.module_entity.player import player_class as __player_class
@@ -29,7 +32,28 @@ import core.module_entity.spawner as spawner
 from core.module_entity.player import player as player
 
 # The default enemy spawner used at the beginning of the game.
-globals.base_spawn = spawner.addBasic(entity.enemy, 1, 2)
+base_spawn = spawner.addBasic(entity.enemy, 1, 2)
+globals.base_spawn = base_spawn
+
+# ==========================================
+
+# Menu and state variables
+__state = "menu"
+
+def setState(state = "menu"):
+  global __state
+  if state == __state: return # Prevent spam loading
+  if state == "menu":
+    __state = "menu"
+    menu.load()
+  elif state == "game":
+    __state = "game"
+    __load_game()
+
+def __load_game():
+  pass
+
+import core.menu as menu
 
 # ==========================================
 
@@ -49,128 +73,134 @@ def __load():
 
   # Load sprites
   images["bullet_base"] = pygame.image.load("assets\image\projectile\\bullet_base.png")
+  images["bullet_rocket"] = pygame.image.load("assets\image\projectile\\bullet_rocket.png")
   images["enemy_base"] = pygame.image.load("assets\image\enemy\enemy_base.png")
   
   # Player may have custom load operations
   player.load()
 
+  menu.load()
+
 def __update(dt):
-  # Update game state
+  if __state == "menu":
+    menu.update(dt)
+  elif __state == "game":
+    # Update game state
 
-  # Ensure screen object is up to date
-  screen.w = pygame.display.get_surface().get_width()
-  screen.h = pygame.display.get_surface().get_height()
+    # Ensure screen object is up to date
+    screen.w = pygame.display.get_surface().get_width()
+    screen.h = pygame.display.get_surface().get_height()
 
-  # Player is separate from entities
-  player.update(dt)
+    # Player is separate from entities
+    player.update(dt)
 
-  # Spawn controller requires update ticks to function properly
-  spawner.update(dt)
+    # Spawn controller requires update ticks to function properly
+    spawner.update(dt)
 
-  # Control code is separate so it may serve as an example
-  if keyIsDown("up"):
-    player.forward(player.speed * dt)
-  if keyIsDown("down"):
-    player.backward(player.speed * dt)
-  if keyIsDown("left"):
-    player.left(player.speed * dt)
-  if keyIsDown("right"):
-    player.right(player.speed * dt)
-  # Clamp player specifically to screen bounds
-  player.x = clamp(player.x, screen.x, screen.x + screen.w)
-  player.y = clamp(player.y, screen.y, screen.y + screen.h)
+    # Control code is separate so it may serve as an example
+    if keyIsDown("up"):
+      player.forward(player.speed * dt)
+    if keyIsDown("down"):
+      player.backward(player.speed * dt)
+    if keyIsDown("left"):
+      player.left(player.speed * dt)
+    if keyIsDown("right"):
+      player.right(player.speed * dt)
+    # Clamp player specifically to screen bounds
+    player.x = clamp(player.x, screen.x, screen.x + screen.w)
+    player.y = clamp(player.y, screen.y, screen.y + screen.h)
 
-  # Update enemies and projectiles
-  for bullet in bullets:
-    bullet.update(dt)
-    # Cull offscreen
-    bullet.alive = bullet.alive and bullet.intersects(cullbox)
-  for entity in entities:
-    entity.update(dt)
-    # Cull offscreen
-    entity.alive = entity.alive and entity.intersects(cullbox)
-    if entity.alive and entity.intersects(player):
-      player.damage(entity.health)
-      entity.health = 0
-  
-  # Handle collisions
-  for bullet in bullets:
+    # Update enemies and projectiles
+    for bullet in bullets:
+      bullet.update(dt)
+      # Cull offscreen
+      bullet.alive = bullet.alive and bullet.intersects(cullbox)
     for entity in entities:
-      if bullet.intersects(entity):
-        bullet.touch(entity)
-    # if bullet.alive and bullet.intersects(player):
-    #   bullet.touch(player)
+      entity.update(dt)
+      # Cull offscreen
+      entity.alive = entity.alive and entity.intersects(cullbox)
+      if entity.alive and entity.intersects(player):
+        player.damage(entity.health)
+        entity.health = 0
+    
+    # Handle collisions
+    for bullet in bullets:
+      for entity in entities:
+        if bullet.intersects(entity):
+          bullet.touch(entity)
+      # if bullet.alive and bullet.intersects(player):
+      #   bullet.touch(player)
 
-  # Remove dead entities
-  # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
-  vEntity = None
-  for i in range(len(entities) - 1, -1, -1):
-    vEntity = entities[i]
-    if vEntity.health <= 0:
-      vEntity.delete()
-    if not vEntity.alive:
-      entities.pop(i)
-  
-  # Remove dead bullets
-  # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
-  vBullet = None
-  for i in range(len(bullets) - 1, -1, -1):
-    vBullet = bullets[i]
-    if not vBullet.alive:
-      bullets.pop(i)
+    # Remove dead entities
+    # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
+    vEntity = None
+    for i in range(len(entities) - 1, -1, -1):
+      vEntity = entities[i]
+      if vEntity.health <= 0:
+        vEntity.delete()
+      if not vEntity.alive:
+        entities.pop(i)
+    
+    # Remove dead bullets
+    # Declare variable outside of for loop, ensuring it doesn't have to be re-declared every iteration.
+    vBullet = None
+    for i in range(len(bullets) - 1, -1, -1):
+      vBullet = bullets[i]
+      if not vBullet.alive:
+        bullets.pop(i)
 
 def __draw():
-  # Initially proposed as script code.
-  # Bullets drawn before entities in order to appear "below."
-  for bullet in bullets:
-    bullet.draw()
-  for entity in entities:
-    entity.draw()
-  player.draw()
+  if __state == "menu":
+    menu.draw()
+  elif __state == "game":
+    # Bullets drawn before entities in order to appear "below."
+    for bullet in bullets:
+      bullet.draw()
+    for entity in entities:
+      entity.draw()
+    player.draw()
 
 def __keydown(key, mod, unicode, scancode):
   # Handle key presses
-
-  # Simple main fire operation
-  if key == pygame.K_SPACE:
-    player.shoot("main")
-  # Alt fire - by default, the same as main fire
-  if key == pygame.K_LSHIFT:
-    player.shoot("alt")
+  if __state == "menu":
+    menu.keydown(key, mod, unicode, scancode)
+  elif __state == "game":
+    # Initiate main fire
+    if key == pygame.K_SPACE:
+      player.begin_fire("main")
+    # Alt fire - by default, the same as main fire
+    elif key == pygame.K_LSHIFT:
+      player.begin_fire("alt")
 
 def __keyup(key, mod, unicode, scancode):
   # Handle key releases
-  pass
+  if __state == "menu":
+    menu.keydown(key, mod, unicode, scancode)
+  elif __state == "game":
+    # Halt main fire
+    if key == pygame.K_SPACE:
+      player.end_fire("main")
+    # Alt fire
+    elif key == pygame.K_LSHIFT:
+      player.end_fire("alt")
 
 def __mousedown(button, x, y):
   # Handle mouse button presses
-  pass
+  if __state == "menu":
+    menu.mousedown(button, x, y)
+  elif __state == "game":
+    pass
 
 def __mouseup(button, x, y):
   # Handle mouse button releases
-  pass
+  if __state == "menu":
+    menu.mousedown(button, x, y)
+  elif __state == "game":
+    pass
 
 # ==========================================
 # Miscellaneous helpers for kids
 # ==========================================
-
-# Simple clamp function.
-# Returns v restricted to the range [a, b] (inclusive)
-def clamp(v, a, b):
-  if v < a: return a
-  if v > b: return b
-  return v
-
-# Simple wrap function.
-# Returns v restricted to the range [a, b), wrapping when necessary
-def wrap(v, a, b):
-  return (v - a)%(b - a) + a
-
-# Simple linear interpolation on one axis.
-# Returns the number a fraction (v) of the way between a and b.
-# Does not perform clamping before operation.
-def lerp(v, a, b):
-  return v*(b-a)+a
 
 # Shortcut to both construct and insert a new enemy into the game.
 # Returns a reference to the enemy afterwards.

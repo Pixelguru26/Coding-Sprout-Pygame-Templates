@@ -65,11 +65,19 @@ The `game` object is the entrypoint into the corelib module. It contains many of
     - `"base"`
  - `game.keyIsDown(key)`
   Returns the status of a key at the time of calling; `True` for pressed and `False` for unpressed. The key argument can be a Pygame key constant or a string designator from the `game.keys` constant, which will automatically be translated.
+ - `game.project(x, y, x1, y1, x2, y2)`
+  Vector projection of (x, y) onto a line segment defined by the endpoints (x1, y1) and (x2, y2). Equivalent to basic vector projection when (x1, y1) = (0, 0)
+ - `game.dist(x1, y1, x2, y1)`
+  Returns the Euclidean distance between the points (x1, y1) and (x2, y2)
+ - `game.sign(v)`
+  A more traditional sign function than Python provides. Returns `-1` if the value is negative, `1` if the value is positive, and `0` if the value is 0 or not a number.
 
 #### Constants:
 
  - `game.keys`
   A dictionary used to translate between Pygame key constants and some user-friendly string representations.
+ - `game.lightmode`
+  A boolean value indicating whether the game should run in a "cpu-light" mode, disabling certain features for smaller devices or development on Replit. Note that this should not change the API significantly; dummy objects and classes will still be present but simply do nothing.
 
 ### Entity module
 
@@ -111,7 +119,7 @@ There are multiple valid constructor overloads, separated by the collision type 
  - `intersects(target)`
   Returns `True` if this entity intersects with the target entity.
 
-  The `"line"` collisionType is currently unsupported.
+  The `"line"` collisionType is currently only partially supported.
  - `delete()`
   Sets the entity's `alive` status to `False`. Derived classes will use this to perform cleanup and animations. If the entity is registered to the game, it will be unregistered after this is called.
  - `forward(amount = 1)`
@@ -129,10 +137,12 @@ There are multiple valid constructor overloads, separated by the collision type 
  - `turnLeft(amount = 90)`
   Rotates the entity counter-clockwise by the specified number of degrees.
   Equivalent to `turnRight(-amount)`
- - `shoot(variant = "base", offset = False)`
+ - `move(offset = (0, 0))`
+  Moves the entity both forward and right. `offset` is a vector in which the first (or x) value indicates the movement to the right in pixels, and the second (or y) value indicates the movement forward in pixels.
+ - `shoot(variant = "base", offset = (0, 0))`
   Fires a projectile from this entity, if the operation is supported. 
-  `variant` may only be `"base"` at present.
-  `offset = True` will offset the projectile from a circular entity in order to avoid self-collision.
+  `variant` may be any of `["base", "rocket"]`.
+  `offset` is a vector oriented so that y+ is equivalent to forward from the parent entity, and x+ is equivalent to right. This is added to the projectile's position when it is created.
 ##### Static Members
 - `collisionTypes`
   A dictionary containing all valid collisionTypes supported by the class. Contains the following values:
@@ -252,6 +262,36 @@ In addition to the methods and members of `game.entity`, the bullet class provid
 
 ##### Static Members
  - `type = "bullet_base"`
+ - `default_speed`
+  The default initial speed of all projectiles instantiated from this class, in pixels per second.
+ - `default_damage = 100`
+  The default initial damage of all projectiles instantiated from this class.
+
+#### Rocket class
+
+Accessible through `game.entity.rocket`
+
+Rockets are a subtype of `bullet` which have a different sprite and more complex behavior.
+
+In addition to the methods and members of `game.entity.bullet`, the rocket class provides the following:
+##### Methods
+
+##### Instance Members
+ - `fallspeed`
+
+##### Static Members
+ - `initial_fall_speed = 400`
+  The initial speed at which the rocket is dropped from its hardpoint/bay/origin. This corresponds directly to an initial positive y velocity tracked separately from its normal speed.
+ - `vertical_damping = 1024`
+  The rate of deceleration from the initial fall speed, in pixels per second per second. Will stop a minimum fall speed of `-100` pixels per second.
+ - `initial_speed = -100`
+  The rocket is launched slightly backward for visual effect.
+ - `acceleration = 2048`
+  Once launched, the rocket's speed will increase by this amount every second.
+ - `default_damage = 200`
+  See parent class
+ - `type = "bullet_rocket`
+  See entity class
 
 ### Spawner module
 
@@ -304,3 +344,13 @@ The graphics module provides some basic utilities as an abstraction for Pygame's
   Wrapper for pygame's blit function. Renders the provided image to the screen with the center at the provided coordinates with no transformation.
  - `draw(image, x, y, scale = 1, angle = 0)`
   Draws the provided image centered at the provided coordinates with a rotation and zoom applied as appropriate. Returns the transformed image instance when complete. If scale and angle are left as default, operates exactly the same as `blit_centered(image, x, y)`.
+
+#### Particle submodule
+
+Accessible through `game.graphics.particle`
+
+The particle submodule will provide an efficient way to spawn large numbers of visual elements which follow simple rules over a short lifespan. It is currently unsupported and incomplete, however.
+
+### Menu module
+
+This feature is currently in development. It will allow students to add simple actuator buttons and scoring.

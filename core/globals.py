@@ -5,3 +5,5 @@ images = {}
 # Game world objects are stored in these lists.
 entities = []
 bullets = []
+
+lightmode = False
