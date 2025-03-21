@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Webcore test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <script src="https://ryanking13.github.io/pyodide-pygame-demo/dist/pyodide.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.37.1/ace.js"
+      integrity="sha512-qLBIClcHlfxpnqKe1lEJQGuilUZMD+Emm/OVMPgAmU2+o3+R5W7Tq2Ov28AZqWqZL8Jjf0pJHQZbxK9B9xMusA=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-builds@1.37.5/css/ace.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+          height: 100vh;
+          width: 100vw;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #07150D;
+          color: whitesmoke;
+      }
+
+      #canvas {
+          margin: 0 auto;
+          display: block;
+      }
+      .prevent-select {
+          -webkit-user-select: none; /* Safari */
+          -ms-user-select: none; /* IE 10 and IE 11 */
+          user-select: text; /* Standard syntax */
+      }
+      #canvas-wrapper {
+          position: relative;
+          display: inline-block;
+      }
+      #ui-layer {
+          position: absolute;
+          isolation: isolate;
+          padding: 0;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+      }
+
+      #canvas {
+        margin: 0 auto;
+        display: block;
+      }
+
+      .button {
+        background-color: #122D1E;
+        color: white;
+        font-weight: bold;
+        padding: 6px 18px;
+        border-radius: 5px;
+        font-size: 17px;
+        user-select: none;
+        border: none;
+        vertical-align: middle;
+        text-align: center;
+        cursor: pointer;
+        white-space: nowrap;
+        margin-top: 2px;
+        margin-bottom: 2px;
+      }
+      .button:hover {
+        background-color: #1C4D3D;
+
+      }
+      .button:active {
+        padding: 8px 18px 4px 18px;
+        background-color: #122D1E;
+        color: lightslategrey;
+        box-shadow: 0 2px #07150D inset;
+      }
+
+      @keyframes flex-open {
+        from {
+          flex-grow: 0;
+        }
+        to {
+          flex-grow: 1;
+        }
+      }
+      @keyframes flex-close {
+        from {
+          flex-grow: 1;
+        }
+        to {
+          flex-grow: 0;
+        }
+      }
+      #editor-toggle {
+        float: right;
+        width: 2ch;
+        height: 100%;
+        background-color: #323330;
+      }
+      #console-toggle {
+        float: left;
+        width: 2ch;
+        height: 100%;
+        background-color: #757770;
+      }
+      input {
+        border: 2px solid #323330;
+        background-color: #272822;
+        color: whitesmoke;
+      }
+      input:focus {
+        outline: none;
+      }
+
+      scripts {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./jslib.js"></script>
+    <script src="./elements.js"></script>
+    <jse-new-tabbed-panel id="tabpanel" style="height: 100%;">
+      <div title="Docs", style="width: 100%; height: 100%; overflow-y: scroll; overflow-wrap: anywhere;">
+        <style>
+          code {
+            background-color: #272822;
+            padding: 4px 1ch;
+            border-radius: 5px;
+            transition: all .5s;
+          }
+          code:hover {
+            scale: 1.01;
+            box-shadow: 0px 4px 8px inset #00000050;
+          }
+          li {
+            padding-top: 1ch;
+            padding-bottom: 1ch;
+          }
+          details {
+            margin: 8px;
+            border-radius: 5px;
+            background-color: #07150D20;
+            box-shadow: 0px 4px 4px #07150D;
+            padding: 4px;
+            transition: all .5s;
+          }
+          details:hover {
+            background-color: #07150D40;
+            box-shadow: 0px 8px 8px #07150DA0;
+          }
+          details>*+* {
+            padding-left: 2ch;
+          }
+          details>*+ul, details>*+ol {
+            margin-left: 4ch;
+          }
+          summary {
+            font-size: 1.5em;
+            font-weight: bold;
+          }
+          details>details>summary {
+            font-size: 1.33em;
+          }
+          details>details>details>summary {
+            font-size: 1.17em;
+          }
+          ::selection {
+            border-radius: 4px;
+            background-color: #67a38f7e;
+            text-shadow: 0px 0px 2px #07150D;
+          }
+        </style>
+        <ul>
+          <li>
+            <hgroup id="docs-game">
+              <h2>Game object</h2>
+              <details>
+                <summary>State Control</summary>
+                <p>
+                  The central system controlling what code
+                  the game executes is the <em>state machine</em>.
+                  The state machine acts like a switch, rerouting all
+                  inputs and outputs so that only one part of the game's
+                  code is active at any given time. For example, if
+                  the game is currently in the "menu" state, any code
+                  included in the "game" state will remain dormant.
+                  <br>
+                  In some engines - such as Unity - the states are
+                  referred to as "stages." However, the principle is the same.
+                  Each stage is a separate environment with its own
+                  collection of objects, like a level in an arcade game.
+                </p>
+                <h4>Controlling the state machine</h4>
+                <p>
+                  Usage is intended to be as simple as possible.
+                  Each state is assigned a simple name that can be used
+                  to target it from anywhere else, avoiding reference issues
+                  across larger codebases.
+                  The game's state can be changed with the
+                  <code>setState(<i>state</i>)</code>
+                  function defined in the root object like so:
+                  <p><code>game.setState("menu")</code></p>
+                
+                </p>
+              </details>
+              <details>
+                <summary>Entities</summary>
+                <details>
+                  <summary>How entities work</summary>
+                  <p>
+                    An entity represents some active thing in the game - 
+                    an enemy, a bullet, a moving platform, etc.
+                    Although they can be stored in many ways, the simplest entity framework
+                    consists of a list where each entry is an entity object.
+                    The framework uses this list to indicate where to dispatch update,
+                    draw, and other callback events to. Everything on the list
+                    is updated and rendered every frame, while anything outside the list
+                    is considered to be outside the game world and non-interactible,
+                    unless special code is added to handle it.
+                  </p>
+                </details>
+                <details>
+                  <summary>Technical details</summary>
+                  <p>
+                    Entities in this engine are divided into two main categories.
+                    The basic <code>game.entities</code> list is sufficient for most purposes,
+                    but for optimization, an additional <code>game.bullets</code> list
+                    is provided which helps to reduce unnecessary calculations.
+                  </p>
+                  <p>
+                    <code>game.player</code> is outside the entity lists entirely, handled
+                    with special interaction cases built into the root entity framework
+                    to provide seamless integration.
+                  </p>
+                  <p>
+                    Addition and removal of entities is deferred until the end of each frame,
+                    in fully encapsulated phases. This is intended to prevent unstable
+                    interactions, such as mutation during traversal.
+                    However, no such protection is provided to entity properties.
+                  </p>
+                </details>
+                <details>
+                  <summary>Usage</summary>
+                  <p>
+                    The basic intended lifecycle of an entity is as follows:
+                    <ol>
+                      <li><code>entity = game.entity(team, x, y, angle, scale, collisionType, a, b)</code><br>
+                        The entity is constructed, either as a generic instance or an instance of a subclass entity type.
+                      </li>
+                      <li><code>game.addEntity(entity)</code><br>
+                        The entity is introduced to the operational list.<br>
+                        This operation is deferred to the end of the frame,
+                        after which point the entity will receive events as usual.
+                      </li>
+                      <li><code>entity.update(dt)</code>, <code>entity.draw()</code><br>
+                        The entity updates, then renders, each frame. Other events
+                        may occur at various times throughout this process.
+                      </li>
+                      <li><code>entity.delete(reason)</code><br>
+                        At some point, either due to an internal event or due to
+                        culling outside the screen boundaries, the entity is terminated.<br>
+                        This sets <code>entity.alive</code> to <code>False</code>,
+                        and clears the <code>entity.unitid</code> for reuse by other entities.
+                      </li>
+                      <li><code><i>(internal)</i> game.entities.splice(i, 1);</code><br>
+                        At the end of the frame, the terminated entity is removed from its list.
+                        At this point, the only remaining references will be those specified
+                        in user code; otherwise it is sent to the garbage collector.
+                      </li>
+                    </ol>
+                  </p>
+                  <p>
+                    Custom entities must derive from the <code>game.entity</code> class.
+                    On its own, this class only handles basic expected functionality.
+                    This includes offscreen culling, intersection callbacks, and
+                    rendering of a static sprite if one is assigned. However,
+                    it will have no ai or behavior of its own until the <code>entity.update(dt)</code>
+                    method is overridden. An example of the minimum requirement for a functional entity follows.
+                  </p>
+                  <pre>
+                    <code style="display: block;">
+  class CustomEntity(game.entity):
+    def __init__(this):
+      super().__init__()
+      this.sprite = game.Asset.assets["bullet_base"]
+  
+    def update(this, dt):
+      super().update(dt)
+      this.forward(100 * dt)
+                    </code>
+                  </pre>
+                </details>
+              </details>
+            </hgroup>
+          </li>
+        </ul>
+      </div>
+      <div title="Editor" style="height: 100%;">
+        <div class="plsedit" id="editor" style="height: 100%;"></div>
+      </div>
+      <div title="Console" style="width: 400px; height: 400px;">
+        <div class="console" id="console" style="height: 100%;"></div>
+      </div>
+      <div id="game" style="width: 900px; height: 600px;">
+        <canvas id="game-canvas" style="width: 900px; height: 600px; background-color: black;"></canvas>
+        <div id="game-ui-layer"></div>
+      </div>
+    </jse-new-tabbed-panel>
+    <div style="display: none; width: 100%; height: 100%;">
+      <!-- <div id="editor-pane" style="flex-grow: 0; margin: 20px 20px 20px 0px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 0 8px 8px 0; overflow: hidden; transition: ease-out 0.8s;">
+        <div id="editor-toggle" style="text-align: center; color: #272822; text-shadow: 0px 2px rgba(0,0,0,0.3);">⦁</div>
+        <div style="top: 0; bottom: 0; left: 0; right: 0; height: 100%;" id="editor"></div>
+      </div>
+      <div id="editor-pad" style="flex-grow: 1; transition: ease-out 0.8s;"></div>
+      <div class="demo" style="flex-basis: 940px;">
+        <div class="demo-header">
+          Coding Sprouts - Python Shooter
+          <i id="game-reload" class="fa fa-refresh refresh-button" style="float: right;"></i>
+        </div>
+        <div class="demo-content" style="overflow:scroll;">
+          <div id="canvas-wrapper" class="prevent-select">
+            <canvas id="canvas" style="width:900px; height:600px; background-color: black;"></canvas>
+            <div id="ui-layer"></div>
+          </div>
+        </div>
+      </div>
+      <div id="console-pad" style="flex-grow: 1; transition: ease-out 0.8s;"></div>
+      <div id="console-pane" style="flex-grow: 0; margin: 20px 0px 20px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px 0px 0px 8px; overflow: hidden; transition: ease-out 0.8s; position: relative;">
+        <div id="console-toggle"></div>
+        <div style="height: 100%; display: flex; flex-direction: column;">
+          <div style="flex-grow: 1; overflow: hidden;">
+            <div id="console" style="width: 100%; height: 100%;"></div>
+          </div>
+          <input id="console-input" type="text" style="width: 100%;"></input>
+        </div>
+      </div> -->
+    </div>
+    <scripts id="scripts">
+      <!-- <script src="./victor.min.js"></script> -->
+      <script>
+        var gameData = {libs: []}; // Used to (re)construct the game object
+        var game = {}; // The big one, the main game object
+        // Construct editor
+        // Construct console
+        // var consoleMain = ace.edit(document.getElementById("tabpanel").tabs[1].content.firstElementChild, {
+        //   readOnly: true,
+        //   scrollPastEnd: false
+        // });
+        // consoleMain.setTheme("ace/theme/monokai");
+      </script>
+      <!-- <script src="./util.js"></script>
+      <script src="./uilib.js"></script>
+      <script src="./entity.js"></script>
+      <script src="./gamecore.js"></script>
+      <script src="./main.js"></script> -->
+    </scripts>
+  </body>
+</html>
