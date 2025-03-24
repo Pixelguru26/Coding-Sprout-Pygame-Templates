@@ -119,6 +119,25 @@ class JSLib2 {
     if (parent) parent.appendChild(element);
     return element;
   }
+  /**
+   * Builds an element and awaits either completed loading or error before returning it.\
+   * By necessity, adds an event listener to "load" and "error."
+   * @param {string|HTMLElement} tag Either a string indicating the tag to construct an element from, or the element itself.
+   * @param {HTMLElement} data A table of element properties to be assigned
+   * @returns {HTMLElement}
+   */
+  async awaitBuild(tag, data) {
+    // Link promise finalizers
+    let ready, fail;
+    let promise = new Promise((resolve, reject) => {ready = resolve; fail = reject;});
+    // Construct and link element
+    let element = this.build(tag, data);
+    element.addEventListener("load", ready);
+    element.addEventListener("error", fail);
+    // Return
+    await promise;
+    return element;
+  }
 }
 
 // Add aliases for events
