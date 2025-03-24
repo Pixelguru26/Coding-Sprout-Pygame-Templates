@@ -1,4 +1,9 @@
 class JSLib2 {
+  /**
+   * Returns the supplied parameter if it is a string. Otherwise, null.
+   * @param {*} v 
+   * @returns {string|null)
+   */
   static isString(v) {
     return (typeof v === 'string' || v instanceof String) ? v : null;
   }
@@ -13,7 +18,8 @@ class JSLib2 {
     return (v != "") ? v : null;
   }
   /**
-   * 
+   * Sets many style attributes ofan element at once from a mapped table.\
+   * Intended only for internal use.
    * @param {HTMLElement} obj 
    * @param {string|CSSStyleDeclaration} style Either a string containing inline style attributes, or a map of properties
    * @returns {HTMLElement}
@@ -86,6 +92,15 @@ class JSLib2 {
     }
     return JSLib2.attr(tag, data);
   }
+  /**
+   * A complex, but powerful recursive system for building an entire element tree at once.\
+   * Basic usage is as follows: `buildTree(["tag", {elementProperty: "value", style: {}}, ...childTags]);`\
+   * 
+   * @param {Array} data 
+   * @param {HTMLElement?} parent 
+   * @param {*} reference 
+   * @returns {HTMLElement|Array<HTMLElement>}
+   */
   static buildTree(data, parent, reference) {
     if (!data) return;
     // Build simple text node when passed a string
@@ -156,3 +171,5 @@ class JSLib2 {
     JSLib2.HTMLEvents["on"+evt] = evt;
   }
 })();
+
+
