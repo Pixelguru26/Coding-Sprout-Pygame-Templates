@@ -2,7 +2,7 @@
   let pyodide = await loadPyodide();
   // Convenience function for transferring a py file alone
   // Note that it still needs to be loaded
-  async function fetchlib(src) {
+  async function fetchText(src) {
     const libpackage = await fetch(src+".py");
     const bin = await libpackage.text();
     pyodide.FS.writeFile("/home/pyodide/"+src+".py", bin);
@@ -15,7 +15,7 @@
     pyodide.unpackArchive(bin, "zip", {extractDir: "/home/pyodide/"+src});
   }
 
-  let canvas = document.getElementById("canvas");
+  let canvas = tabs.shadowRoot.getElementById("game-canvas");
   let canvctx = canvas.getContext("2d");
   canvas.width = 900;
   canvas.height = 600;
@@ -26,27 +26,13 @@
   if (usrtext) {
     pyodide.FS.writeFile(pathMain, usrtext);
   } else {
-    usrtext = usrstore.getItem("main") ?? await fetchlib("main");
+    // usrtext = usrstore.getItem("main") ?? await fetchText("main");
+    usrtext = usrstore.getItem("main") ?? defaultpy;
   }
 
   // ==========================================
-  // Console pane
+  // Console
   // ==========================================
-
-  // let consoleOpen = false;
-
-  // let consolePane = document.getElementById("console-pane");
-  // let consolePad = document.getElementById("console-pad");
-  // let consoleToggleButton = document.getElementById("console-toggle");
-
-  // let toggleConsole = (evt) => {
-  //   consoleOpen = !consoleOpen;
-  //   consolePane.style.setProperty("flex-grow", consoleOpen ? 1 : 0);
-  //   consolePad.style.setProperty("flex-grow", consoleOpen ? 0 : 1);
-  // }
-  // consoleToggleButton.onclick = toggleConsole;
-  var consoleMain = ace.edit()
-
   printin = (txt) => {
     consoleMain.session.insert({
       row: consoleMain.session.getLength(),
@@ -62,33 +48,22 @@
   }
 
   let consoleQue = [];
-  let consoleInput = document.getElementById("console-input");
-
-  consoleInput.onkeydown = (evt) => {
-    if (evt.key === "Enter") {
-      let text = consoleInput.value;
-      consoleInput.value = '';
-      consoleQue.push(text);
-      print(text);
-      jslib.usrgame?.command?.(text);
+  let consoleInput = tabs.shadowRoot.getElementById("console-input");
+  if (consoleInput) {
+    consoleInput.onkeydown = (evt) => {
+      if (evt.key === "Enter") {
+        let text = consoleInput.value;
+        consoleInput.value = '';
+        consoleQue.push(text);
+        print(text);
+        jslib.usrgame?.command?.(text);
+      }
     }
   }
 
-  pyodide.setStdin({
-    stdin: () => {
-      return consoleQue.shift();
-    }
-  });
-  // Initial opening handled in editor pane initialization.
-
   // ==========================================
-  // Editor pane
+  // Editor
   // ==========================================
-
-  let editorOpen = false;
-  let editorPane = document.getElementById("editor-pane");
-  let editorPad = document.getElementById("editor-pad");
-  let editorToggleButton = document.getElementById("editor-toggle");
 
   let saveMain = async (force = false) => {
     let v = editor.getValue();
@@ -96,7 +71,9 @@
     if (usrtext == v && !force) return v;
     usrtext = v;
     usrstore.setItem("main", v);
-    editorToggleButton.style.color = "#272822";
+    // editorToggleButton.style.color = "#272822";
+    reloadIcon.classList.add("active");
+    unsavedIcon.classList.remove("active");
     return v;
   }
   /**
@@ -110,26 +87,20 @@
       usrgame = pyodide.pyimport("main");
       jslib.usrgame = usrgame;
     } else {
-      editor.setValue(await fetchlib("main"));
+      // editor.setValue(await fetchText("main"));
+      editor.setValue(defaultpy);
     }
   }
 
   editor.addEventListener("change", (delta) => {
-    editorToggleButton.style.color = "lightgray";
+    // editorToggleButton.style.color = "lightgray";
+    unsavedIcon.classList.add("active");
   });
-  let toggleEditor = (evt) => {
-    editorOpen = !editorOpen;
-    editorPane.style.setProperty("flex-grow", editorOpen ? 1 : 0);
-    editorPad.style.setProperty("flex-grow", editorOpen ? 0 : 1);
-  }
-  editorToggleButton.onclick = toggleEditor;
   let editorInit = async (editor, usrtext) => {
     editor.setValue(usrtext, -1);
-    editorToggleButton.style.backgroundColor = "#757770"; // Remove gray-out of toggle
-    editorToggleButton.style.color = "#272822"; // Undo the unsaved indication from setting the initial text
-    // Initialize console
-    if (!consoleOpen) toggleConsole();
-    if (!editorOpen) toggleEditor();
+    // editorToggleButton.style.backgroundColor = "#757770"; // Remove gray-out of toggle
+    // editorToggleButton.style.color = "#272822"; // Undo the unsaved indication from setting the initial text
+    unsavedIcon.classList.remove("active"); // Undo the unsaved indication from setting the initial text
   }
   let doctimer = 0;
   let allowSave = true;
@@ -148,15 +119,14 @@
   // Reload button
   // ==========================================
 
-  let reloadIcon = document.getElementById("game-reload");
   let anim = reloadIcon.animate([
     { transform: "rotate(0deg)" },
     { transform: "rotate(360deg)" }
-  ], {
-    duration: 2000,
-    easing: "linear",
-    iterations: Infinity
-  }
+    ], {
+      duration: 2000,
+      easing: "linear",
+      iterations: Infinity
+    }
   );
   anim.pause();
   reloadIcon.onmouseover = (evt) => {
@@ -246,15 +216,16 @@
     await saveMain();
     let usrgame = pyload("main");
     
-    await game.load(usrgame, document.getElementById("ui-layer"));
+    await game.load(usrgame, tabs.shadowRoot.getElementById("game-ui-layer"));
     usrgame.load?.();
     game.running = true;
   }
   async function reloadGame() {
     game.running = false;
-    document.getElementById("ui-layer").textContent = '';
+    tabs.shadowRoot.getElementById("game-ui-layer").textContent = '';
     canvctx.reset();
     pyodide = await loadPyodide();
+    reloadIcon.classList.remove("active");
     await gameInit();
   }
   

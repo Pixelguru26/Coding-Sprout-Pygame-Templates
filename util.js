@@ -2,40 +2,6 @@
 // Module of jslib. Do not import directly!
 
 /**
- * Clears the parent array of all items.
- * Sets all entries to null, then sets length to 0.
- */
-Array.prototype.clear = function () {
-  let l = this.length;
-  for (let i = 0; i < l; i++) {
-    this[i] = null;
-  }
-  this.length = 0;
-}
-Object.defineProperty(Array.prototype, "first", {
-  /**
-   * @returns The first item in the array, or null if the array is empty.
-   */
-  get: function () { return this[0]; },
-  /**
-   * Sets the first item in the array. This is always index 0.
-   * @param {*} v 
-   */
-  set: function (v) { this[0] = v; }
-});
-Object.defineProperty(Array.prototype, "last", {
-  /**
-   * @returns The last item in the array, or null if the array is empty.
-   */
-  get: function () { return this[this.length - 1]; },
-  /**
-   * Sets the last item in the array. Shortcut for arr[arr.length - 1] = v
-   * @param {*} v 
-   */
-  set: function (v) { this[this.length - 1] = v; }
-});
-
-/**
  * Determining stringiness in JS is impressively stupid.
  * This function is the best I have so far.
  * @param {*} v 

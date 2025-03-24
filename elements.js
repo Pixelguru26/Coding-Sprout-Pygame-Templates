@@ -27,80 +27,6 @@ var JSECore = class {
   }
 };
 
-class JSEBase extends HTMLElement {
-  constructor() {
-    super();
-  }
-}
-
-class JSETab extends HTMLElement {
-  constructor() {
-    super();
-    this.onclick = this.inst_onclick;
-    this.onpointerdown = this.enabledrag;
-    this.onpointermove = this.begindrag;
-    this.pointerdrag = this.pointerdrag.bind(this);
-    this.enddrag = this.enddrag.bind(this);
-    this.dummy = jslib.buildElement("span", null, {
-      display: "inline-block"
-    });
-    this.dummy.classList.add("jse-tab-dummy");
-  }
-  pressed = false;
-  posx = 0;
-  posy = 0;
-  enabledrag(evt) {
-    this.dragenabled = true;
-  }
-  /**
-   * @param {PointerEvent} evt 
-   */
-  pointerdrag(evt) {
-    if (evt.buttons & 1) {
-      if (evt.type === "pointermove") {
-        this.posx += evt.movementX;
-        this.style.left = `${this.posx}px`;
-      }
-    } else {
-      this.enddrag();
-    }
-  }
-  begindrag(evt) {
-    if ((evt.buttons & 1) && this.dragenabled) {
-      this.dragenabled = false;
-      this.posx = this.offsetLeft;
-      this.style.position = "absolute";
-      this.style.opacity = "50%";
-      document.addEventListener("pointermove", this.pointerdrag, { passive: true });
-      document.addEventListener("pointerup", this.enddrag, { passive: true });
-      let bounds = this.getBoundingClientRect();
-      this.dummy.width = bounds.width;
-      this.dummy.height = bounds.height;
-      this.insertAdjacentElement("beforebegin", this.dummy);
-    }
-  }
-  enddrag() {
-    this.dummy.remove();
-    this.style.removeProperty("position");
-    this.style.removeProperty("opacity");
-    this.style.removeProperty("offset-position");
-    this.posx = 0;
-  }
-  inst_onclick(evt) {
-    this.pane.setTab(this);
-  }
-  activate() {
-    this.classList.add("active");
-  }
-  deactivate() {
-    this.classList.remove("active");
-  }
-  connectedCallback() {
-    this.classList.add("prevent-select");
-  }
-}
-// customElements.define("jse-tab", JSETab);
-
 class JSENewTabbedPanel extends HTMLElement {
   static __id = 0;
 
@@ -110,11 +36,6 @@ class JSENewTabbedPanel extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({mode: "open"});
-    this.shadowRoot.append(jslib.buildElement("script", {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ace/1.37.1/ace.js",
-      integrity: "sha512-qLBIClcHlfxpnqKe1lEJQGuilUZMD+Emm/OVMPgAmU2+o3+R5W7Tq2Ov28AZqWqZL8Jjf0pJHQZbxK9B9xMusA==",
-      crossorigin: "anonymous", referrerpolicy: "no-referrer"
-    }));
     this.shadowRoot.append(jslib.buildElement("link", {
       rel: "stylesheet",
       type: "text/css",
@@ -153,22 +74,12 @@ class JSENewTabbedPanel extends HTMLElement {
    */
   onChanged(change) {
     for (let node of change.addedNodes) {
-      if (node.nodeType !== 3) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
         this.removeChild(node);
-        this.addTab(node);
-        for (let tgt of node.childNodes) {
-          if (tgt.nodeType === Node.ELEMENT_NODE && tgt.classList.contains("plsedit")) {
-            let temp = tgt;
-            if (temp) {
-              temp = ace.edit(temp, {
-                  theme: "ace/theme/monokai",
-                  mode: "ace/mode/python",
-                  autoScrollEditorIntoView: true
-                }
-              );
-              temp.renderer.attachToShadowRoot();
-            }
-          }
+        if (["STYLE", "SCRIPT", "LINK"].includes(node.tagName)) {
+          this.shadowRoot.prepend(node);
+        } else {
+          this.addTab(node);
         }
       }
     }
@@ -188,8 +99,29 @@ class JSENewTabbedPanel extends HTMLElement {
 
       this.label = jslib.buildElement("div", {
         class: "jse-tab prevent-select",
-        textContent: title
+        textContent: title,
+        style: {
+          position: "relative"
+        }
       });
+      let tooltip;
+      for (const element of content.children) {
+        if (element.tagName === "SUMMARY") {
+          tooltip = element;
+          break;
+        }
+      }
+      if (tooltip) {
+        tooltip.remove();
+        this.tooltip = jslib.buildElement("div", {
+          class: "jse-tab-tooltip",
+          style: {
+            position: "absolute"
+          }
+        });
+        this.tooltip.append(tooltip);
+        this.label.append(this.tooltip);
+      }
       this.label.tabParent = this;
       this.content = content;
       this.__content_original_display = content.style.display;
@@ -242,89 +174,4 @@ class JSENewTabbedPanel extends HTMLElement {
 }
 customElements.define("jse-tab", JSENewTabbedPanel.tab);
 customElements.define("jse-new-tabbed-panel", JSENewTabbedPanel);
-
-// class JSETabbedPanel extends HTMLElement {
-//   constructor() {
-//     super();
-//     this.attachShadow({mode: "open"});
-//     this.shadowRoot.append(jslib.buildElement("link", {
-//       rel: "stylesheet",
-//       type: "text/css",
-//       href: "./JSEStyles/JSETabContainer.css"
-//     }));
-//     this.navbar = jslib.buildElement("nav");
-//     this.shadowRoot.append(this.navbar);
-//     this.body = jslib.buildElement("main");
-//     this.shadowRoot.append(this.body);
-//     this.tabs = [];
-//   }
-
-//   lastTab = null;
-//   setTab(tab) {
-//     if (tab !== this.lastTab) {
-//       this.lastTab?.deactivate();
-//       this.body.replaceChildren();
-//       this.body.append(tab.tabContent);
-//       tab.activate();
-//       this.lastTab = tab;
-//     }
-//   }
-
-//   connectedCallback() {
-//     // Styling here
-//     jslib.setCSS(this, {
-//       width: "100%",
-//       height: "100%",
-//       position: "relative",
-//       display: "flex",
-//       flexDirection: "column",
-//       borderRadius: "4px",
-//       overflow: "hidden",
-//       border: "2px solid #122"
-//     });
-//     this.observer = new MutationObserver((changes, observer) => {
-//       for (let change of changes) {
-//         if (change.target === this) {
-//           this.onChanged(change);
-//         }
-//       }
-//     });
-//     this.observer.observe(this, {childList: true});
-//   }
-
-//   /**
-//    * @param {string} str 
-//    */
-//   static capitalize(str) {
-//     return str.replace(/\b\w/g, (c) => c.toUpperCase());
-//   }
-
-//   /**
-//    * @param {HTMLElement} content 
-//    */
-//   addTab(content) {
-//     let ret = jslib.buildElement("jse-tab", {
-//       textContent: (content.title && content.title != "") ? content.title : (content.id && content.id != "") ? JSETabbedPanel.capitalize(content.id) : "new tab"
-//     });
-//     ret.tabContent = content;
-//     ret.pane = this;
-//     this.navbar.append(ret);
-//     this.tabs.push(ret);
-//   }
-
-//   /**
-//    * @param {MutationRecord} change 
-//    */
-//   onChanged(change) {
-//     for (let node of change.addedNodes) {
-//       if (node.nodeType !== 3) {
-//         this.removeChild(node);
-//         this.addTab(node);
-//       }
-//     }
-//   }
-// }
-// customElements.define("jse-tabbed-panel", JSETabbedPanel);
-
-// ==========================================
 

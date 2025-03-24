@@ -27,31 +27,38 @@
         height: 100px;
       }
     </style>
-    <script src="./jslib.js"></script>
+    <script src="./jslib/lib.js"></script>
     <script>
-      let tab = jslib.buildElement("input", {
-        type: "radio",
-        name: `JSE_TAB_PANE_${0}`,
-      });
-      document.body.append(tab);
-      
-      tab = jslib.buildElement("input", {
-        type: "radio",
-        name: `JSE_TAB_PANE_${0}`,
-        textContent: "why"
-      });
-      document.body.append(tab);
-      
-      tab = jslib.buildElement("input", {
-        type: "radio",
-        name: `JSE_TAB_PANE_${0}`,
-      });
-      document.body.append(tab);
-
-      document.body.append(jslib.buildElement("div", {
-        class: "jse-tab"
+      document.body.append(JSLib2.build("div", {
+        style: {
+          width: "100px",
+          height: "100px",
+          backgroundColor: "red"
+        }
       }));
+      // let tab = jslib.buildElement("input", {
+      //   type: "radio",
+      //   name: `JSE_TAB_PANE_${0}`,
+      // });
+      // document.body.append(tab);
+      
+      // tab = jslib.buildElement("input", {
+      //   type: "radio",
+      //   name: `JSE_TAB_PANE_${0}`,
+      //   textContent: "why"
+      // });
+      // document.body.append(tab);
+      
+      // tab = jslib.buildElement("input", {
+      //   type: "radio",
+      //   name: `JSE_TAB_PANE_${0}`,
+      // });
+      // document.body.append(tab);
+
+      // document.body.append(jslib.buildElement("div", {
+      //   class: "jse-tab"
+      // }));
     </script>
-    <script src="./elements.js"></script>
+    <!-- <script src="./elements.js"></script> -->
   </body>
 </html>
